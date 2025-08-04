@@ -1,0 +1,98 @@
+# buildspec.yml - Versão Final
+# Este arquivo é compatível com o projeto CodeBuild criado via Terraform.
+# Ele utiliza as variáveis de ambiente definidas no recurso aws_codebuild_project.
+version: 0.2
+
+phases:
+  install:
+    commands:
+      # A variável TERRAFORM_VERSION agora vem da configuração do projeto CodeBuild.
+      # O valor '1.5.5' será usado, conforme definido no seu arquivo .tf.
+      - echo "Instalando a versão do Terraform definida no projeto: ${TERRAFORM_VERSION}"
+      - wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip
+      - unzip -q terraform_${TERRAFORM_VERSION}_linux_arm64.zip
+      - mv terraform /usr/local/bin/
+      - terraform --version
+      - echo "Instalação do Terraform concluída."
+
+  pre_build:
+    commands:
+      # --- Preparação do Ambiente ---
+      - echo "Iniciando a fase de pre-build..."
+      - echo "Configurando variáveis de ambiente para o Terraform..."
+
+      # Mapeia as variáveis de ambiente passadas pelo projeto CodeBuild para nomes mais curtos.
+      # Note que os nomes correspondem aos definidos no seu recurso 'aws_codebuild_project'.
+      - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
+      - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
+      
+      # Exibe as variáveis para facilitar o debug nos logs do CodeBuild.
+      # As variáveis COMMAND e STATE_NAME são esperadas da invocação da Lambda.
+      - echo "Comando recebido: ${COMMAND}"
+      - echo "Nome do estado: ${STATE_NAME}"
+      - echo "Bucket S3 para o backend: ${TF_STATE_BUCKET}"
+      - echo "Tabela DynamoDB para lock: ${TF_LOCK_TABLE}"
+      - echo "Região AWS: ${AWS_REGION}"
+
+      # Navega para o diretório raiz do código fonte clonado do GitHub.
+      - cd ${CODEBUILD_SRC_DIR}
+
+      # --- Inicialização do Terraform ---
+      # Configura o backend do Terraform dinamicamente usando as variáveis de ambiente.
+      - echo "Inicializando o Terraform..."
+      - terraform init -reconfigure -no-color \
+          -backend-config="bucket=${TF_STATE_BUCKET}" \
+          -backend-config="key=states/${STATE_NAME}/terraform.tfstate" \
+          -backend-config="region=${AWS_REGION}" \
+          -backend-config="dynamodb_table=${TF_LOCK_TABLE}"
+
+  build:
+    commands:
+      # --- Execução do Comando Principal ---
+      - echo "Iniciando a fase de build..."
+      - echo "Executando o comando Terraform: '${COMMAND}'"
+
+      # Lógica condicional para executar plan, apply ou destroy.
+      # A flag -auto-approve é crucial para a automação.
+      - |
+        if [ "${COMMAND}" = "plan" ]; then
+          terraform plan -no-color
+        elif [ "${COMMAND}" = "apply" ]; then
+          terraform apply -auto-approve -no-color
+        elif [ "${COMMAND}" = "destroy" ]; then
+          terraform destroy -auto-approve -no-color
+        else
+          echo "ERRO: Comando inválido: '${COMMAND}'. Os comandos válidos são 'plan', 'apply', 'destroy'."
+          exit 1
+        fi
+      - echo "Comando '${COMMAND}' executado com sucesso."
+
+  post_build:
+    commands:
+      # --- Limpeza Pós-Execução ---
+      - echo "Iniciando a fase de post-build..."
+
+      # Executa a limpeza do backend somente se o comando foi 'destroy'.
+      - |
+        if [ "${COMMAND}" = "destroy" ]; then
+          echo "Iniciando limpeza do backend após o 'destroy'..."
+
+          # 1. Deleta a pasta do estado no S3.
+          STATE_KEY="states/${STATE_NAME}/"
+          echo "Deletando pasta de estado no S3: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
+          aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}" --recursive
+
+          # 2. Deleta o item de lock do DynamoDB.
+          # A LockID do Terraform corresponde à chave (key) do arquivo de estado no S3.
+          LOCK_ID="states/${STATE_NAME}/terraform.tfstate"
+          echo "Deletando item de lock da tabela ${TF_LOCK_TABLE} com LockID: ${LOCK_ID}"
+          aws dynamodb delete-item \
+            --table-name "${TF_LOCK_TABLE}" \
+            --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" \
+            --region "${AWS_REGION}"
+
+          echo "Limpeza do backend concluída."
+        else
+          echo "Nenhuma ação de limpeza necessária para o comando '${COMMAND}'."
+        fi
+      - echo "Processo do CodeBuild finalizado com sucesso."

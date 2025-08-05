@@ -30,14 +30,6 @@ phases:
       # Note que os nomes correspondem aos definidos no seu recurso 'aws_codebuild_project'.
       - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
-      
-      # Exibe as variáveis para facilitar o debug nos logs do CodeBuild.
-      # As variáveis COMMAND e STATE_NAME são esperadas da invocação da Lambda.
-      - echo "Comando recebido: ${COMMAND}"
-      - echo "Nome do estado: ${STATE_NAME}"
-      - echo "Bucket S3 para o backend: ${TF_STATE_BUCKET}"
-      - echo "Tabela DynamoDB para lock: ${TF_LOCK_TABLE}"
-      - echo "Região AWS: ${AWS_REGION}"
 
       # Navega para o diretório raiz do código fonte clonado do GitHub.
       - cd ${CODEBUILD_SRC_DIR}
@@ -55,7 +47,7 @@ phases:
     commands:
       # --- Execução do Comando Principal ---
       - echo "Iniciando a fase de build..."
-      - echo "Executando o comando Terraform: ${COMMAND}"
+      - echo "Executando o comando Terraform:"
 
       # Lógica condicional para executar plan, apply ou destroy.
       # A flag -auto-approve é crucial para a automação.
@@ -70,7 +62,7 @@ phases:
           echo "ERRO: Comando inválido: '${COMMAND}'. Os comandos válidos são 'plan', 'apply', 'destroy'."
           exit 1
         fi
-      - echo "Comando '${COMMAND}' executado com sucesso."
+      - echo "Comando  executado com sucesso."
 
   post_build:
     commands:
@@ -84,13 +76,13 @@ phases:
 
           # 1. Deleta a pasta do estado no S3.
           STATE_KEY="states/${STATE_NAME}/"
-          echo "Deletando pasta de estado no S3: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
+          echo "Deletando pasta de estado no S3: "
           aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}" --recursive
 
           # 2. Deleta o item de lock do DynamoDB.
           # A LockID do Terraform corresponde à chave (key) do arquivo de estado no S3.
           LOCK_ID="states/${STATE_NAME}/terraform.tfstate"
-          echo "Deletando item de lock da tabela ${TF_LOCK_TABLE} com LockID: ${LOCK_ID}"
+          echo "Deletando item de lock da tabela ${TF_LOCK_TABLE} com LockID"
           aws dynamodb delete-item \
             --table-name "${TF_LOCK_TABLE}" \
             --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" \
@@ -98,6 +90,6 @@ phases:
 
           echo "Limpeza do backend concluída."
         else
-          echo "Nenhuma ação de limpeza necessária para o comando '${COMMAND}'."
+          echo "Nenhuma ação de limpeza necessária para o comando ."
         fi
       - echo "Processo do CodeBuild finalizado com sucesso."

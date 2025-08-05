@@ -1,13 +1,12 @@
-# buildspec.yml - Versão Corrigida e Verificada
 version: 0.2
 
 env:
   variables:
-    # Define valores padrão. Eles serão sobrescritos pela Lambda (COMMAND, STATE_NAME)
-    # ou pela configuração do projeto CodeBuild (TERRAFORM_VERSION).
+    # Define valores padrão para robustez.
+    # Eles serão sobrescritos se passados pela Lambda ou pela configuração do projeto.
     TERRAFORM_VERSION: "1.5.5"
     COMMAND: "plan"
-    STATE_NAME: "default-state" # Adicionado para robustez
+    STATE_NAME: "default-state"
 
 phases:
   install:
@@ -22,7 +21,7 @@ phases:
   pre_build:
     commands:
       # --- Verificação de Segurança ---
-      - echo "Verificando se as variáveis de ambiente necessárias existem..."
+      - echo "Verificando se as variáveis de ambiente necessárias foram recebidas..."
       - |
         if [ -z "${COMMAND}" ] || [ -z "${STATE_NAME}" ]; then
           echo "ERRO CRÍTICO: As variáveis de ambiente 'COMMAND' e/ou 'STATE_NAME' não foram fornecidas."

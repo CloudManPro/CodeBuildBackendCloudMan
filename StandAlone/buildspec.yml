@@ -30,12 +30,7 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/StandAlone
 
       # --- BLOCO DE DEPURAÇÃO DEFINITIVO ---
-      - echo "--- DEBUGANDO O CAMINHO S3 ANTES DO DOWNLOAD ---"
-      - echo "Variável STATE_NAME recebida: '${STATE_NAME}'"
-      - echo "Variável TF_STATE_BUCKET usada: '${TF_STATE_BUCKET}'"
       - S3_URI_DEBUG="s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
-      - echo "URI S3 construído para download: '${S3_URI_DEBUG}'"
-      - echo "------------------------------------------------"
       
       # --- Download da Configuração Terraform do S3 ---
       # O comando 'aws s3 cp' irá falhar aqui se o caminho estiver errado, e o log acima mostrará o porquê.

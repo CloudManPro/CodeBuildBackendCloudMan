@@ -44,10 +44,6 @@ phases:
               cp -a ${SOURCE_PATH}/. "${DEST_DIR}/"
               echo "  - SUCESSO: Arquivos copiados."
 
-              # Comando de depuração para verificar o conteúdo da pasta copiada
-              echo "===== VERIFICANDO CONTEÚDO DE '${DEST_DIR}' ====="
-              ls -laR "${DEST_DIR}"
-              echo "================================================="
             else
               echo "  - AVISO: Diretório da fonte ${SOURCE_PATH} não encontrado. Pulando."
             fi

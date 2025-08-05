@@ -44,7 +44,7 @@ phases:
 
   build:
     commands:
-      - echo "Executando o comando Terraform: ${COMMAND}"
+      - echo "Executando o comando Terraform: '${COMMAND}'"
       - |
         if [ "${COMMAND}" = "plan" ]; then
           terraform plan -no-color

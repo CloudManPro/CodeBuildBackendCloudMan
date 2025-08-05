@@ -36,16 +36,6 @@ phases:
       # O comando 'aws s3 cp' irá falhar aqui se o caminho estiver errado, e o log acima mostrará o porquê.
       - aws s3 cp "${S3_URI_DEBUG}" .  # O ponto '.' baixa para o diretório atual (StandAlone)
       - echo "Download concluído com sucesso."
-      
-      # --- Verificação Pós-Download ---
-      - echo "Verificando se o arquivo 'main.tf' existe localmente..."
-      - ls -la
-      - |
-        if [ ! -f "main.tf" ]; then
-          echo "ERRO FATAL: O arquivo 'main.tf' NÃO foi baixado. Verifique o URI e as permissões."
-          exit 1
-        fi
-      - echo "Arquivo 'main.tf' encontrado com sucesso."
 
       # --- Inicialização do Terraform ---
       - echo "Inicializando o Terraform..."

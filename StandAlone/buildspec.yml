@@ -35,7 +35,7 @@ phases:
         terraform init -reconfigure -no-color \
           -backend-config="bucket=${TF_STATE_BUCKET}" \
           -backend-config="key=states/${STATE_NAME}/terraform.tfstate" \
-          -backend-config="region=${AWS_REGION}" \
+          -backend-config="region=${REGION}" \
           -backend-config="dynamodb_table=${TF_LOCK_TABLE}"
 
   build:
@@ -68,7 +68,7 @@ phases:
           aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}"
 
           #echo "Removendo trava do DynamoDB: ${LOCK_ID}"
-          #aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
+          aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${REGION}"
           
           #echo "Limpeza do backend concluída."
         else

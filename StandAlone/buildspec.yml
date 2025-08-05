@@ -32,7 +32,6 @@ phases:
       # --- Download da Configuração Terraform do S3 para o diretório atual ---
       - echo "Baixando o arquivo de configuração 'main.tf' do S3..."
       - S3_URI="s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
-      - echo "Origem do arquivo: ${S3_URI}"
       - aws s3 cp "${S3_URI}" .  # O ponto '.' baixa para o diretório atual (StandAlone)
       - echo "Download concluído."
 
@@ -86,7 +85,6 @@ phases:
           echo "Removendo arquivo de estado: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
           aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}"
 
-          echo "Removendo trava do DynamoDB: ${LOCK_ID}"
           aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
           
           echo "Limpeza do backend concluída."

@@ -3,6 +3,10 @@
 # Ele utiliza as variáveis de ambiente definidas no recurso aws_codebuild_project.
 version: 0.2
 
+env:
+  variables:
+    COMMAND: "plan"
+
 phases:
   install:
     commands:

@@ -2,11 +2,12 @@ version: 0.2
 
 phases:
   install:
+    run-as: root
     commands:
+      - echo "Iniciando fase de instalação com privilégios de root..."
       - wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip
       - unzip -q terraform_${TERRAFORM_VERSION}_linux_arm64.zip
-      # --- CORREÇÃO APLICADA AQUI ---
-      - sudo mv terraform /usr/local/bin/
+      - mv terraform /usr/local/bin/
       - terraform --version
       - echo "Instalação do Terraform concluída."
 

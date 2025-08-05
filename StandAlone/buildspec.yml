@@ -70,7 +70,8 @@ phases:
           #echo "Removendo trava do DynamoDB: ${LOCK_ID}"
           LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate-md5"
           aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${REGION}"
-          
+          LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate"
+          aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${REGION}"
           #echo "Limpeza do backend concluída."
         else
           echo "Nenhuma ação de limpeza de backend necessária para o comando '${COMMAND}'."

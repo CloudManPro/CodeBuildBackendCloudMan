@@ -2,12 +2,21 @@ version: 0.2
 
 phases:
   install:
-    run-as: root
     commands:
-      - echo "Iniciando fase de instalação com privilégios de root..."
+      # Não precisamos mais de 'run-as: root'
+      - echo "Instalando Terraform em um diretório local..."
       - wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip
       - unzip -q terraform_${TERRAFORM_VERSION}_linux_arm64.zip
-      - mv terraform /usr/local/bin/
+      
+      # MUDANÇA 1: Criar um diretório local e mover o binário para lá
+      - mkdir -p bin
+      - mv terraform bin/
+      
+      # MUDANÇA 2: Adicionar nosso diretório local ao PATH do sistema
+      # O CODEBUILD_SRC_DIR é o diretório raiz do nosso projeto (gravável)
+      - export PATH="$CODEBUILD_SRC_DIR/bin:$PATH"
+      
+      # Verificação: O sistema agora deve encontrar o terraform
       - terraform --version
       - echo "Instalação do Terraform concluída."
 
@@ -61,6 +70,6 @@ phases:
           aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
           echo "Limpeza do backend concluída."
         else
-          echo "Nenhuma ação de limpeza necessária para o comando '${COMMAND}'."
+          echo "Nenhuma ação de limpeza necessária para o comando ."
         fi
       - echo "Processo do CodeBuild finalizado com sucesso."

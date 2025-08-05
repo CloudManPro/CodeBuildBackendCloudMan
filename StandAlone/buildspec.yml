@@ -27,25 +27,32 @@ phases:
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
 
       # --- Alteração do Diretório de Trabalho (Passo Crucial) ---
-      # Entra no diretório correto ANTES de qualquer operação do Terraform para manter a consistência com o backend.
       - cd ${CODEBUILD_SRC_DIR}/StandAlone
-      # --- Download da Configuração Terraform do S3 para o diretório atual ---
-      - echo "Baixando o arquivo de configuração 'main.tf' do S3..."
-      - S3_URI="s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
-      - aws s3 cp "${S3_URI}" .  # O ponto '.' baixa para o diretório atual (StandAlone)
-      - echo "Download concluído."
 
-      # --- Verificação e Depuração ---
-      - echo "Listando arquivos no diretório de trabalho para confirmar o download:"
+      # --- BLOCO DE DEPURAÇÃO DEFINITIVO ---
+      - echo "--- DEBUGANDO O CAMINHO S3 ANTES DO DOWNLOAD ---"
+      - echo "Variável STATE_NAME recebida: '${STATE_NAME}'"
+      - echo "Variável TF_STATE_BUCKET usada: '${TF_STATE_BUCKET}'"
+      - S3_URI_DEBUG="s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
+      - echo "URI S3 construído para download: '${S3_URI_DEBUG}'"
+      - echo "------------------------------------------------"
+      
+      # --- Download da Configuração Terraform do S3 ---
+      # O comando 'aws s3 cp' irá falhar aqui se o caminho estiver errado, e o log acima mostrará o porquê.
+      - aws s3 cp "${S3_URI_DEBUG}" .  # O ponto '.' baixa para o diretório atual (StandAlone)
+      - echo "Download concluído com sucesso."
+      
+      # --- Verificação Pós-Download ---
+      - echo "Verificando se o arquivo 'main.tf' existe localmente..."
       - ls -la
       - |
         if [ ! -f "main.tf" ]; then
-          echo "ERRO CRÍTICO: O arquivo 'main.tf' não foi encontrado no diretório de trabalho após a tentativa de download."
+          echo "ERRO FATAL: O arquivo 'main.tf' NÃO foi baixado. Verifique o URI e as permissões."
           exit 1
         fi
       - echo "Arquivo 'main.tf' encontrado com sucesso."
 
-      # --- Inicialização do Terraform (agora executado no diretório correto) ---
+      # --- Inicialização do Terraform ---
       - echo "Inicializando o Terraform..."
       - |
         terraform init -reconfigure -no-color \
@@ -56,8 +63,6 @@ phases:
 
   build:
     commands:
-      # Executa o comando Terraform com base na variável 'COMMAND'
-      # 'set -e' garante que o build falhe imediatamente se o comando Terraform falhar.
       - |
         set -e
         echo "Executando terraform ${COMMAND}..."
@@ -68,23 +73,24 @@ phases:
         elif [ "${COMMAND}" = "destroy" ]; then
           terraform destroy -auto-approve -no-color
         else
-          echo "ERRO: Comando desconhecido: '${COMMAND}'. Use 'plan', 'apply' ou 'destroy'."
+          echo "ERRO: Comando desconhecido. Use 'plan', 'apply' ou 'destroy'."
           exit 1
         fi
 
   post_build:
     commands:
-      # Limpa o estado S3 e a trava do DynamoDB somente após um 'destroy' bem-sucedido.
+      # Limpa o backend somente após um 'destroy' bem-sucedido.
       - echo "Iniciando a fase de post-build..."
       - |
         if [ "${COMMAND}" = "destroy" ] && [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
           echo "Build bem-sucedido com comando 'destroy'. Iniciando limpeza do backend..."
           STATE_KEY="states/${STATE_NAME}/terraform.tfstate"
-          LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate" # O LockID geralmente corresponde ao caminho do estado
+          LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate"
           
           echo "Removendo arquivo de estado: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
           aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}"
 
+          echo "Removendo trava do DynamoDB: ${LOCK_ID}"
           aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
           
           echo "Limpeza do backend concluída."

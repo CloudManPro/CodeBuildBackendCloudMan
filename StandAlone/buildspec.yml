@@ -56,24 +56,4 @@ phases:
 
   post_build:
     commands:
-      # Limpa o backend somente após um 'destroy' bem-sucedido.
-      - echo "Iniciando a fase de post-build..."
-      - |
-        if [ "${COMMAND}" = "destroy" ] && [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
-          echo "Build bem-sucedido com comando 'destroy'. Iniciando limpeza do backend..."
-          STATE_KEY="states/${STATE_NAME}/terraform.tfstate"
-          LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate"
-          
-          echo "Removendo arquivo de estado: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
-          aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}"
-
-          #echo "Removendo trava do DynamoDB: ${LOCK_ID}"
-          LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate-md5"
-          aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${REGION}"
-          LOCK_ID="${TF_STATE_BUCKET}/states/${STATE_NAME}/terraform.tfstate"
-          aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${REGION}"
-          #echo "Limpeza do backend concluída."
-        else
-          echo "Nenhuma ação de limpeza de backend necessária para o comando '${COMMAND}'."
-        fi
       - echo "Processo do CodeBuild finalizado."

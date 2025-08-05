@@ -20,7 +20,6 @@ phases:
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
 
       # Muda o diretório de trabalho para onde os arquivos do Terraform ficarão
-      - echo "Mudando para o diretório de trabalho: ${CODEBUILD_SRC_DIR}/StandAlone"
       - cd ${CODEBUILD_SRC_DIR}/StandAlone
 
       # --- Bloco de Processamento de Fontes Secundárias para Replicar Ambiente Local ---

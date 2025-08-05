@@ -1,12 +1,7 @@
 version: 0.2
 
-env:
-  variables:
-    # Define valores padrão para robustez.
-    # Eles serão sobrescritos se passados pela Lambda ou pela configuração do projeto.
-    TERRAFORM_VERSION: "1.5.5"
-    COMMAND: "plan"
-    STATE_NAME: "default-state"
+# O bloco 'env: variables:' foi removido.
+# O build agora depende exclusivamente das variáveis passadas pela Lambda e pela configuração do projeto.
 
 phases:
   install:

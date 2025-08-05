@@ -27,10 +27,6 @@ phases:
       - echo "Configurando variáveis de ambiente para o Terraform..."
       - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
-      
-      - echo "Comando a ser executado: ${COMMAND}"
-      - echo "Estado a ser gerenciado: ${STATE_NAME}"
-
       - cd ${CODEBUILD_SRC_DIR}
 
       # --- Inicialização do Terraform ---
@@ -51,10 +47,8 @@ phases:
         elif [ "${COMMAND}" = "destroy" ]; then
           terraform destroy -auto-approve -no-color
         else
-          echo "ERRO: Comando inválido: '${COMMAND}'."
           exit 1
         fi
-      - echo "Comando '${COMMAND}' executado com sucesso."
 
   post_build:
     commands:
@@ -64,13 +58,8 @@ phases:
           echo "Iniciando limpeza do backend após o 'destroy'..."
           STATE_KEY="states/${STATE_NAME}/"
           LOCK_ID="states/${STATE_NAME}/terraform.tfstate"
-          
-          echo "Deletando pasta de estado do S3: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
           aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}" --recursive
-          
-          echo "Deletando item de lock do DynamoDB com LockID: ${LOCK_ID}"
           aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
-          
           echo "Limpeza do backend concluída."
         else
           echo "Nenhuma ação de limpeza necessária para o comando '${COMMAND}'."

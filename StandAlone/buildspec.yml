@@ -25,12 +25,10 @@ phases:
       - echo "Variáveis OK."
       - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
-      - echo "Diretório de trabalho inicial: $(pwd)"
 
       # --- MUDANÇA PRINCIPAL: Download da Configuração Terraform do S3 ---
       - echo "Baixando o arquivo de configuração 'main.tf' do S3..."
       - S3_URI="s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
-      - echo "Origem do arquivo: ${S3_URI}"
       - aws s3 cp "${S3_URI}" ./main.tf
       - echo "Download concluído."
 
@@ -59,7 +57,6 @@ phases:
       # 'set -e' garante que o build falhe se o comando terraform falhar
       - |
         set -e
-        echo "Executando terraform ${COMMAND}..."
         if [ "${COMMAND}" = "plan" ]; then
           terraform plan -no-color
         elif [ "${COMMAND}" = "apply" ]; then
@@ -67,7 +64,7 @@ phases:
         elif [ "${COMMAND}" = "destroy" ]; then
           terraform destroy -auto-approve -no-color
         else
-          echo "Comando desconhecido: ${COMMAND}"
+          echo "Comando desconhecido"
           exit 1
         fi
 

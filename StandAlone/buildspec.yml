@@ -13,7 +13,7 @@ phases:
     commands:
       # A variável TERRAFORM_VERSION agora vem da configuração do projeto CodeBuild.
       # O valor '1.5.5' será usado, conforme definido no seu arquivo .tf.
-      - echo "Instalando a versão do Terraform definida no projeto: '${TERRAFORM_VERSION}'"
+      - echo "Instalando a versão do Terraform definida no projeto: "
       - wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip
       - unzip -q terraform_${TERRAFORM_VERSION}_linux_arm64.zip
       - mv terraform /usr/local/bin/

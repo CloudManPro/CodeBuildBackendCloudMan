@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     commands:
-      # Instalação do Terraform
+      # Instala a versão especificada do Terraform e o adiciona ao PATH do ambiente de build
       - echo "Instalando Terraform v${TERRAFORM_VERSION}..."
       - wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip
       - unzip -q terraform_${TERRAFORM_VERSION}_linux_arm64.zip
@@ -11,30 +11,40 @@ phases:
       - mv terraform bin/
       - export PATH="$CODEBUILD_SRC_DIR/bin:$PATH"
       - terraform --version
+      - echo "Instalação do Terraform concluída."
 
   pre_build:
     commands:
-      # Configuração do backend do Terraform
+      # Define variáveis de ambiente para a configuração do backend do Terraform a partir das variáveis do CodeBuild
       - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
       
-      # REMOVIDO: A linha `cd ${CODEBUILD_SRC_DIR}/StandAlone` foi removida.
-      # O trabalho será feito no diretório raiz da fonte primária.
+      # O trabalho será feito no diretório raiz da fonte primária, onde este buildspec.yml se encontra.
+      # A linha `cd ${CODEBUILD_SRC_DIR}/StandAlone` foi removida.
 
-      # --- Bloco de Processamento de Fontes Secundárias com Depuração ---
-      - echo "Procurando e processando fontes secundárias..."
+      # --- Bloco de Processamento de Fontes Secundárias ---
+      - echo "Procurando e processando fontes secundárias para replicar ambiente local..."
       - |
         if [ -n "$SECONDARY_SOURCE_IDENTIFIERS" ]; then
           for identifier in $SECONDARY_SOURCE_IDENTIFIERS; do
+            # Constrói o nome da variável de ambiente que contém o caminho da fonte (ex: CODEBUILD_SRC_DIR_CloudManProLambdaDeploy)
             SOURCE_PATH_VAR_NAME="CODEBUILD_SRC_DIR_$identifier"
+            # Usa a indireção do shell ('!') para obter o valor da variável (o caminho real)
             SOURCE_PATH="${!SOURCE_PATH_VAR_NAME}"
-            DEST_DIR="./LambdaDeploy" # Define o nome do diretório de destino
+            
+            # Define o nome do diretório de destino como 'LambdaDeploy', que é o que o Terraform espera.
+            DEST_DIR="./LambdaDeploy"
 
             echo "Processando fonte '${identifier}'..."
+            echo "  - Caminho da fonte resolvido: ${SOURCE_PATH}"
+            echo "  - Diretório de destino: ${DEST_DIR}"
+
             if [ -d "$SOURCE_PATH" ]; then
               mkdir -p "${DEST_DIR}"
               cp -a ${SOURCE_PATH}/. "${DEST_DIR}/"
               echo "  - SUCESSO: Arquivos copiados."
+
+              # Comando de depuração para verificar o conteúdo da pasta copiada
               echo "===== VERIFICANDO CONTEÚDO DE '${DEST_DIR}' ====="
               ls -laR "${DEST_DIR}"
               echo "================================================="
@@ -48,11 +58,11 @@ phases:
       - echo "Processamento de fontes secundárias concluído."
       # --- Fim do Bloco de Processamento ---
 
-      # Baixa o arquivo main.tf
+      # Baixa o arquivo de configuração principal do Terraform do S3 para o diretório de trabalho atual
       - echo "Baixando configuração principal de s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
       - aws s3 cp "s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf" .
       
-      # Inicializa o Terraform
+      # Inicializa o Terraform, que agora encontrará o main.tf e a pasta LambdaDeploy no mesmo diretório
       - echo "Inicializando o Terraform..."
       - |
         terraform init -reconfigure -no-color \
@@ -63,11 +73,20 @@ phases:
 
   build:
     commands:
-      # Executa o comando Terraform
+      # Executa o comando Terraform (plan, apply, ou destroy) passado pela variável de ambiente COMMAND
       - |
         set -e
         echo "Executando terraform ${COMMAND}..."
-        # ... (código do if/elif/else permanece o mesmo)
+        if [ "${COMMAND}" = "plan" ]; then
+          terraform plan -no-color
+        elif [ "${COMMAND}" = "apply" ]; then
+          terraform apply -auto-approve -no-color
+        elif [ "${COMMAND}" = "destroy" ]; then
+          terraform destroy -auto-approve -no-color
+        else
+          echo "ERRO: Comando desconhecido '${COMMAND}'. Use 'plan', 'apply' ou 'destroy'."
+          exit 1
+        fi
 
   post_build:
     commands:

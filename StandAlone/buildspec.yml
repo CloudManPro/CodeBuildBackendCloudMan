@@ -50,7 +50,7 @@ phases:
     commands:
       # --- Execução do Comando Principal ---
       - echo "Iniciando a fase de build..."
-      - echo "Executando o comando Terraform: '${COMMAND}'"
+      - echo "Executando o comando Terraform: ${COMMAND}"
 
       # Lógica condicional para executar plan, apply ou destroy.
       # A flag -auto-approve é crucial para a automação.

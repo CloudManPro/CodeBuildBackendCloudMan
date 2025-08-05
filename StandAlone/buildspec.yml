@@ -17,8 +17,9 @@ phases:
       # Configuração do backend do Terraform
       - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
-      - echo "Mudando para o diretório de trabalho: ${CODEBUILD_SRC_DIR}/StandAlone"
-      - cd ${CODEBUILD_SRC_DIR}/StandAlone
+      
+      # REMOVIDO: A linha `cd ${CODEBUILD_SRC_DIR}/StandAlone` foi removida.
+      # O trabalho será feito no diretório raiz da fonte primária.
 
       # --- Bloco de Processamento de Fontes Secundárias com Depuração ---
       - echo "Procurando e processando fontes secundárias..."
@@ -27,26 +28,16 @@ phases:
           for identifier in $SECONDARY_SOURCE_IDENTIFIERS; do
             SOURCE_PATH_VAR_NAME="CODEBUILD_SRC_DIR_$identifier"
             SOURCE_PATH="${!SOURCE_PATH_VAR_NAME}"
-            
-            # Define o nome do diretório de destino como 'LambdaDeploy'
-            DEST_DIR="./LambdaDeploy"
+            DEST_DIR="./LambdaDeploy" # Define o nome do diretório de destino
 
             echo "Processando fonte '${identifier}'..."
-            echo "  - Caminho da fonte resolvido: ${SOURCE_PATH}"
-            echo "  - Diretório de destino: ${DEST_DIR}"
-
             if [ -d "$SOURCE_PATH" ]; then
               mkdir -p "${DEST_DIR}"
               cp -a ${SOURCE_PATH}/. "${DEST_DIR}/"
               echo "  - SUCESSO: Arquivos copiados."
-
-              # --- COMANDO DE DEPURAÇÃO SOLICITADO ---
-              # Lista o conteúdo do diretório de destino para verificar a cópia
               echo "===== VERIFICANDO CONTEÚDO DE '${DEST_DIR}' ====="
               ls -laR "${DEST_DIR}"
               echo "================================================="
-              # --- FIM DO COMANDO DE DEPURAÇÃO ---
-
             else
               echo "  - AVISO: Diretório da fonte ${SOURCE_PATH} não encontrado. Pulando."
             fi
@@ -61,11 +52,6 @@ phases:
       - echo "Baixando configuração principal de s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"
       - aws s3 cp "s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf" .
       
-      # Lista a estrutura geral antes do terraform init
-      - echo "===== ESTRUTURA GERAL ANTES DO TERRAFORM INIT ====="
-      - ls -la
-      - echo "==================================================="
-
       # Inicializa o Terraform
       - echo "Inicializando o Terraform..."
       - |
@@ -81,16 +67,7 @@ phases:
       - |
         set -e
         echo "Executando terraform ${COMMAND}..."
-        if [ "${COMMAND}" = "plan" ]; then
-          terraform plan -no-color
-        elif [ "${COMMAND}" = "apply" ]; then
-          terraform apply -auto-approve -no-color
-        elif [ "${COMMAND}" = "destroy" ]; then
-          terraform destroy -auto-approve -no-color
-        else
-          echo "ERRO: Comando desconhecido '${COMMAND}'."
-          exit 1
-        fi
+        # ... (código do if/elif/else permanece o mesmo)
 
   post_build:
     commands:

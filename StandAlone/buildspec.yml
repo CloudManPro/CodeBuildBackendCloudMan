@@ -29,8 +29,6 @@ phases:
       # --- Alteração do Diretório de Trabalho (Passo Crucial) ---
       # Entra no diretório correto ANTES de qualquer operação do Terraform para manter a consistência com o backend.
       - cd ${CODEBUILD_SRC_DIR}/StandAlone
-      - echo "Diretório de trabalho alterado para: $(pwd)"
-
       # --- Download da Configuração Terraform do S3 para o diretório atual ---
       - echo "Baixando o arquivo de configuração 'main.tf' do S3..."
       - S3_URI="s3://${TF_STATE_BUCKET}/states/${STATE_NAME}/main.tf"

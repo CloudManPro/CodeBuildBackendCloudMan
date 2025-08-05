@@ -1,14 +1,12 @@
 version: 0.2
 
-# O bloco 'env: variables:' foi removido.
-# O build agora depende exclusivamente das variáveis passadas pela Lambda e pela configuração do projeto.
-
 phases:
   install:
     commands:
       - wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip
       - unzip -q terraform_${TERRAFORM_VERSION}_linux_arm64.zip
-      - mv terraform /usr/local/bin/
+      # --- CORREÇÃO APLICADA AQUI ---
+      - sudo mv terraform /usr/local/bin/
       - terraform --version
       - echo "Instalação do Terraform concluída."
 

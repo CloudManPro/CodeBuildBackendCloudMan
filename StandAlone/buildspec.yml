@@ -15,14 +15,6 @@ phases:
 
   pre_build:
     commands:
-      # --- Verificação de Segurança e Preparação das Variáveis ---
-      - echo "Verificando variáveis de ambiente essenciais..."
-      - |
-        if [ -z "${COMMAND}" ] || [ -z "${STATE_NAME}" ] || [ -z "${AWS_S3_BUCKET_TARGET_NAME_0}" ] || [ -z "${AWS_DYNAMODB_TABLE_TARGET_NAME_0}" ]; then
-          echo "ERRO CRÍTICO: Variáveis essenciais (COMMAND, STATE_NAME, AWS_S3_BUCKET_TARGET_NAME_0, AWS_DYNAMODB_TABLE_TARGET_NAME_0) não foram fornecidas."
-          exit 1
-        fi
-      - echo "Variáveis OK."
       - export TF_STATE_BUCKET=${AWS_S3_BUCKET_TARGET_NAME_0}
       - export TF_LOCK_TABLE=${AWS_DYNAMODB_TABLE_TARGET_NAME_0}
 

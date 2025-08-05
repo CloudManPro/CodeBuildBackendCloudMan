@@ -67,10 +67,10 @@ phases:
           echo "Removendo arquivo de estado: s3://${TF_STATE_BUCKET}/${STATE_KEY}"
           aws s3 rm "s3://${TF_STATE_BUCKET}/${STATE_KEY}"
 
-          echo "Removendo trava do DynamoDB: ${LOCK_ID}"
-          aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
+          #echo "Removendo trava do DynamoDB: ${LOCK_ID}"
+          #aws dynamodb delete-item --table-name "${TF_LOCK_TABLE}" --key "{\"LockID\": {\"S\": \"${LOCK_ID}\"}}" --region "${AWS_REGION}"
           
-          echo "Limpeza do backend concluída."
+          #echo "Limpeza do backend concluída."
         else
           echo "Nenhuma ação de limpeza de backend necessária para o comando '${COMMAND}'."
         fi

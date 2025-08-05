@@ -32,7 +32,7 @@ phases:
           # Faz um loop para cada identificador na string (separados por espaço)
           for identifier in $SECONDARY_SOURCE_IDENTIFIERS; do
             # Constrói dinamicamente o caminho para o diretório da fonte secundária
-            SOURCE_PATH="$CODEBUILD_SRC_DIR_$identifier"
+            SOURCE_PATH="${CODEBUILD_SRC_DIR}_$identifier"
             
             echo "Processando fonte '$identifier' de '$SOURCE_PATH'..."
             
